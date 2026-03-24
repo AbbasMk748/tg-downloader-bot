@@ -105,7 +105,7 @@ def download_video(url, format_id, outdir):
         opts["format"] = "bestaudio/best"
         opts["postprocessors"] = [{"key": "FFmpegExtractAudio", "preferredcodec": "mp3", "preferredquality": "192"}]
     else:
-        opts["format"] = f"{format_id}+bestaudio/best[height<={format_id}]/best"
+        opts["format"] = f"{format_id}+bestaudio/best"
         opts["merge_output_format"] = "mp4"
     try:
         with yt_dlp.YoutubeDL(opts) as ydl:
