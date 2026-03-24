@@ -34,7 +34,7 @@ import yt_dlp
 # ─────────────────────────────────────────────
 #  الإعدادات
 # ─────────────────────────────────────────────
-BOT_TOKEN = 8699314658:AAGaz9ogy-XkN0qYmOlpRgj6mZNOpPjiWuA   # ← ضع توكنك هنا
+BOT_TOKEN = os.environ.get("BOT_TOKEN")   # ← ضع توكنك هنا
 
 logging.basicConfig(
     format="%(asctime)s | %(levelname)s | %(message)s",
