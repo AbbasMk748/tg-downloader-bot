@@ -16,10 +16,7 @@ from telegram.ext import (
 )
 import yt_dlp
 
-logging.basicConfig(
-    format="%(asctime)s | %(levelname)s | %(message)s",
-    level=logging.INFO,
-)
+logging.basicConfig(format="%(asctime)s | %(levelname)s | %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
@@ -67,8 +64,11 @@ def format_duration(s):
     return f"{h:02d}:{m:02d}:{s:02d}" if h else f"{m:02d}:{s:02d}"
 
 def get_video_info(url):
+    opts = {"quiet": True, "skip_download": True}
+    if os.path.exists("cookies.txt"):
+        opts["cookiefile"] = "cookies.txt"
     try:
-        with yt_dlp.YoutubeDL({"quiet": True, "skip_download": True}) as ydl:
+        with yt_dlp.YoutubeDL(opts) as ydl:
             return ydl.extract_info(url, download=False)
     except Exception as e:
         logger.error(f"Info error: {e}")
@@ -97,16 +97,18 @@ def get_formats(info):
 
 def download_video(url, format_id, outdir):
     audio = format_id.startswith("bestaudio")
-    opts = {
-        "quiet": True,
-        "outtmpl": os.path.join(outdir, "%(title).50s.%(ext)s"),
-    }
+    opts = {"quiet": True, "outtmpl": os.path.join(outdir, "%(title).50s.%(ext)s")}
+    
     if audio:
         opts["format"] = "bestaudio/best"
         opts["postprocessors"] = [{"key": "FFmpegExtractAudio", "preferredcodec": "mp3", "preferredquality": "192"}]
     else:
         opts["format"] = f"{format_id}+bestaudio/best"
         opts["merge_output_format"] = "mp4"
+        
+    if os.path.exists("cookies.txt"):
+        opts["cookiefile"] = "cookies.txt"
+        
     try:
         with yt_dlp.YoutubeDL(opts) as ydl:
             ydl.download([url])
@@ -133,21 +135,19 @@ async def cmd_help(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         "1️⃣ انسخ رابط الفيديو\n"
         "2️⃣ أرسله هنا\n"
         "3️⃣ اختر الجودة\n"
-        "4️⃣ انتظر التحميل ✅\n\n"
-        "⚠️ الحد الأقصى 50MB",
+        "4️⃣ انتظر التحميل ✅",
         parse_mode="Markdown"
     )
 
 async def handle_url(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     urls = extract_urls(update.message.text or "")
     if not urls:
-        await update.message.reply_text("❌ أرسل رابط صالح من يوتيوب أو تيك توك...")
+        await update.message.reply_text("❌ أرسل رابط صالح...")
         return
 
     url = urls[0]
     platform = detect_platform(url)
     emoji = PLATFORM_EMOJI.get(platform, "🌐")
-
     msg = await update.message.reply_text(f"{emoji} جاري جلب معلومات الفيديو...")
 
     loop = asyncio.get_event_loop()
@@ -179,7 +179,6 @@ async def handle_url(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     keyboard.append([InlineKeyboardButton("❌ إلغاء", callback_data="cancel")])
 
     ctx.user_data["title"] = title
-
     await msg.edit_text(
         f"{emoji} *{title}*\n\n⏱ المدة: `{duration}`\n👤 {uploader}\n\n📥 *اختر الجودة:*",
         parse_mode="Markdown",
@@ -244,3 +243,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
